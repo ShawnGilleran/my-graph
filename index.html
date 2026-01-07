@@ -1,20 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Identity Link VR - Labeled</title>
+    <title>Identity Link VR</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-forcegraph-component/dist/aframe-forcegraph-component.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
-    
     <script src="https://unpkg.com/three-spritetext"></script>
-
     <style>
         body { margin: 0; background-color: #000; color: #0f0; font-family: monospace; }
         #log { position: absolute; top: 10px; left: 10px; z-index: 1000; pointer-events: none; }
     </style>
 </head>
 <body>
-    <div id="log">> Initializing Labeled Scene...</div>
+    <div id="log">> Initializing Identity Graph...</div>
 
     <a-scene background="color: #050505">
         <a-entity id="rig" movement-controls="fly: true; speed: 0.3;">
@@ -25,32 +23,37 @@
 
         <a-entity id="graph" 
             forcegraph="
-                node-auto-color-by: group;
-                link-width: 0.2;
-                link-opacity: 0.2;
+                link-width: 0.5;
+                link-opacity: 0.3;
+                link-color: #ffffff;
                 node-three-object: [node => {
                     const sprite = new SpriteText(node.name);
-                    sprite.color = 'white';
-                    sprite.textHeight = 10; // Adjust this if labels are too big/small
-                    sprite.backgroundColor = 'rgba(0,0,0,0.5)'; // Dark background for readability
+                    sprite.color = node.color || '#ffffff';
+                    sprite.textHeight = 6;
                     sprite.padding = 2;
-                    sprite.borderRadius = 4;
+                    sprite.backgroundColor = 'rgba(0,0,0,0.6)';
+                    sprite.borderRadius = 2;
                     return sprite;
                 }];
             " 
-            position="0 1.6 -15">
+            position="0 1.6 -20">
         </a-entity>
     </a-scene>
 
     <script>
+        // Fetch your JSON data from the same folder
         fetch(`./vr_graph_data.json?t=${Date.now()}`)
             .then(res => res.json())
             .then(data => {
-                document.getElementById('log').innerHTML = `> Loaded ${data.nodes.length} nodes. Labels active.`;
-                document.getElementById('graph').setAttribute('forcegraph', {
+                document.getElementById('log').innerHTML = `> Found ${data.nodes.length} nodes. Ready for VR.`;
+                const graphEl = document.getElementById('graph');
+                graphEl.setAttribute('forcegraph', {
                     nodes: data.nodes,
                     links: data.links
                 });
+            })
+            .catch(err => {
+                document.getElementById('log').innerHTML = "ERROR: " + err.message;
             });
     </script>
 </body>
