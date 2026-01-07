@@ -72,13 +72,12 @@
                     graphEl.setAttribute('forcegraph', {
                         nodes: data.nodes,
                         links: data.links,
+                        // THE VR CALLBACK
                         onNodeHover: (node) => {
                             if (node) {
-                                header.innerHTML = `MATCH: <span style="color:white">${node.name}</span>`;
-                                header.style.background = "rgba(0, 60, 0, 0.9)";
-                            } else {
-                                header.innerHTML = `CLOUD ACTIVE: ${data.nodes.length} IDENTITIES`;
-                                header.style.background = "rgba(0, 30, 0, 0.9)";
+                                // This will show up in your green header in the headset
+                                header.innerHTML = `DECODED: ${node.name}`;
+                                header.style.backgroundColor = "rgba(0, 80, 0, 0.9)";
                             }
                         }
                     });
