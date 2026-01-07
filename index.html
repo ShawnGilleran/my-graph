@@ -27,19 +27,21 @@
             link-width: 0.2;
             link-opacity: 0.3;
             node-three-object: [node => {
-                // 1. Safety Check: If SpriteText failed to load, return false to show a sphere
-                if (typeof SpriteText === 'undefined') return false;
-        
-                // 2. Create the label
-                const sprite = new SpriteText(node.name);
-                sprite.color = node.color || '#ffffff';
-                sprite.textHeight = 8;
-                sprite.padding = 2;
-                sprite.backgroundColor = 'rgba(0,0,0,0.5)';
-                sprite.borderRadius = 4;
-                return sprite;
+                try {
+                    // If SpriteText isn't loaded yet, return false to show default spheres
+                    if (typeof SpriteText === 'undefined') return false;
+            
+                    const sprite = new SpriteText(node.name);
+                    sprite.color = node.color || '#00ff88';
+                    sprite.textHeight = 5;
+                    sprite.padding = 1;
+                    sprite.backgroundColor = 'rgba(0,0,0,0.5)';
+                    return sprite;
+                } catch (e) {
+                    console.error("SpriteText Error:", e);
+                    return false; // Fallback to sphere
+                }
             }];
-"
             position="0 1.6 -20">
         </a-entity>
     </a-scene>
