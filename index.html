@@ -1,30 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Identity Link VR - Final Fix</title>
+    <meta charset="utf-8">
+    <title>Identity Link VR | Production</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-forcegraph-component/dist/aframe-forcegraph-component.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+    
     <style>
-        /* Force the overlay to the very top of everything */
+        body { margin: 0; background-color: #000; overflow: hidden; }
         #data-header { 
             position: fixed; 
             top: 0; left: 0; width: 100%; 
-            background: #002200; color: #00ff88; 
-            padding: 20px; font-family: monospace; font-size: 20px;
-            border-bottom: 3px solid #00ff88; z-index: 9999 !important;
-            text-align: center; box-sizing: border-box;
+            background: rgba(0, 30, 0, 0.9); color: #00ff88; 
+            padding: 15px; font-family: 'Courier New', monospace; font-size: 18px;
+            border-bottom: 2px solid #00ff88; z-index: 9999;
+            text-align: center; pointer-events: none;
         }
-        body { margin: 0; background: #000; }
     </style>
 </head>
 <body>
-    <div id="data-header">SYSTEM READY: HOVER OVER A NODE TO DECODE</div>
 
-    <a-scene background="color: #010101" cursor="rayOrigin: mouse">
+    <div id="data-header">INITIALIZING IDENTITY CLOUD...</div>
+
+    <a-scene 
+        background="color: #010101" 
+        renderer="antialias: true; colorManagement: true; precision: mediump;"
+        cursor="rayOrigin: mouse">
+        
         <a-entity id="rig" movement-controls="fly: true; speed: 1.5;">
-            <a-entity camera look-controls position="0 20 200"></a-entity>
+            <a-entity camera look-controls position="0 1.6 150">
+                <a-entity cursor="fuse: false;"
+                          raycaster="objects: [forcegraph-node]; far: 1000;"
+                          position="0 0 -1"></a-entity>
+            </a-entity>
+            <a-entity oculus-touch-controls="hand: left"></a-entity>
+            <a-entity oculus-touch-controls="hand: right" laser-controls="hand: right" raycaster="objects: [forcegraph-node]; far: 1000;"></a-entity>
         </a-entity>
+
+        <a-entity light="type: ambient; intensity: 2.0"></a-entity>
 
         <a-entity id="graph" 
             forcegraph="
@@ -32,44 +46,67 @@
                 link-source: source;
                 link-target: target;
                 node-auto-color-by: group;
-                node-rel-size: 4;
+                node-rel-size: 3.5;
                 link-width: 0.8;
-                link-opacity: 0.4;
+                link-opacity: 0.3;
+                link-color: #ffffff;
                 link-directional-particles: 3;
+                link-directional-particle-speed: 0.01;
+                link-directional-particle-size: 2;
+                d3-force-link-distance: 80;
+                d3-force-charge: -120;
                 warmup-ticks: 150;
                 cooldown-ticks: 0;
             ">
         </a-entity>
+
     </a-scene>
 
     <script>
         const header = document.getElementById('data-header');
+        const graphEl = document.getElementById('graph');
 
+        // Fetch the data from your Python-generated JSON
         fetch(`./vr_graph_data.json?t=${Date.now()}`)
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error("JSON file not found.");
+                return res.json();
+            })
             .then(data => {
-                const graphEl = document.getElementById('graph');
-                
-                // Set data and the internal 'onNodeHover' callback
-                graphEl.setAttribute('forcegraph', {
-                    nodes: data.nodes,
-                    links: data.links,
-                    // This is the specific property for hover data
-                    onNodeHover: (node) => {
-                        if (node) {
-                            console.log("IDENTIFIED:", node.name); // Check your Mac console!
-                            header.innerHTML = `MATCH FOUND: <span style="color:white">${node.name}</span> | ID: ${node.id}`;
-                            header.style.background = "#004400";
-                        } else {
-                            header.innerHTML = `SCANNING ${data.nodes.length} NODES...`;
-                            header.style.background = "#002200";
+                header.innerHTML = `DATABASE LOADED: ${data.nodes.length} NODES | ENTER VR`;
+
+                const startCloud = () => {
+                    header.innerHTML = "GENERATING CLOUD... STAND BY";
+                    
+                    // Inject data and setup the hover callback
+                    graphEl.setAttribute('forcegraph', {
+                        nodes: data.nodes,
+                        links: data.links,
+                        onNodeHover: (node) => {
+                            if (node) {
+                                header.innerHTML = `MATCH: <span style="color:white">${node.name}</span>`;
+                                header.style.background = "rgba(0, 60, 0, 0.9)";
+                            } else {
+                                header.innerHTML = `CLOUD ACTIVE: ${data.nodes.length} IDENTITIES`;
+                                header.style.background = "rgba(0, 30, 0, 0.9)";
+                            }
                         }
-                    }
+                    });
+                };
+
+                // VR Optimization: Only build the heavy 3D objects when user is ready
+                document.querySelector('a-scene').addEventListener('enter-vr', () => {
+                    setTimeout(startCloud, 1000);
                 });
+
+                // For testing on Mac Browser
+                if (!AFRAME.utils.device.checkHeadsetConnected()) {
+                    startCloud();
+                }
             })
             .catch(err => {
-                header.innerHTML = "FETCH ERROR: Check your JSON file";
-                console.error(err);
+                header.innerHTML = "CRITICAL ERROR: " + err.message;
+                header.style.background = "maroon";
             });
     </script>
 </body>
