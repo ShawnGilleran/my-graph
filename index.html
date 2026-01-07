@@ -28,9 +28,16 @@
         renderer="antialias: false; precision: mediump;"
         webxr="referenceSpaceType: local;">
     
-        <a-entity id="rig" position="0 0 50">
-            <a-entity camera look-controls></a-entity>
+    <a-entity id="rig" 
+              movement-controls="fly: true; speed: 0.8;" 
+              position="0 0 50">
+        <a-entity camera look-controls position="0 1.6 0"></a-entity>
+        <a-entity oculus-touch-controls="hand: left"></a-entity>
+        <a-entity oculus-touch-controls="hand: right" 
+                  laser-controls="hand: right"
+                  raycaster="objects: [forcegraph-node]; far: 500; interval: 100;">
         </a-entity>
+</a-entity>
     
         <a-entity id="graph" 
             forcegraph="
