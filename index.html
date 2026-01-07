@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Identity Link VR</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-forcegraph-component/dist/aframe-forcegraph-component.min.js"></script>
+    <style>
+        body { margin: 0; background-color: #000; color: #0f0; font-family: monospace; }
+        #log { position: absolute; top: 10px; left: 10px; z-index: 1000; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="log">> Initializing VR Scene...</div>
+
+    <a-scene background="color: #000">
+        <a-entity id="graph" forcegraph="
+            node-auto-color-by: group;
+            node-label: name;
+            link-width: 0.5;
+            link-opacity: 0.2;
+            node-val: val;
+        " position="0 0 -50"></a-entity>
+
+        <a-entity laser-controls="hand: right"></a-entity>
+        <a-entity laser-controls="hand: left"></a-entity>
+        <a-camera look-controls wasd-controls position="0 1.6 0"></a-camera>
+    </a-scene>
+
+    <script>
+        const log = (msg) => { document.getElementById('log').innerHTML += "<br>> " + msg; };
+
+        // We fetch the data and "inject" it into the A-Frame component
+        fetch(`./vr_graph_data.json?t=${Date.now()}`)
+            .then(res => {
+                if (!res.ok) throw new Error("Could not find vr_graph_data.json");
+                return res.json();
+            })
+            .then(data => {
+                log(`Success! Loaded ${data.nodes.length} nodes.`);
+                const graphEl = document.getElementById('graph');
+                
+                // Inject the data into the A-Frame component
+                graphEl.setAttribute('forcegraph', {
+                    nodes: data.nodes,
+                    links: data.links
+                });
+            })
+            .catch(err => {
+                log("FETCH ERROR: " + err.message);
+                console.error(err);
+            });
+    </script>
+</body>
+</html>
