@@ -1,89 +1,57 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Identity Link VR - Immersive Edition</title>
+    <title>Identity Link VR - Labeled</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-forcegraph-component/dist/aframe-forcegraph-component.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     
+    <script src="https://unpkg.com/three-spritetext"></script>
+
     <style>
         body { margin: 0; background-color: #000; color: #0f0; font-family: monospace; }
-        #debug-log { 
-            position: absolute; top: 10px; left: 10px; z-index: 1000; 
-            pointer-events: none; font-size: 14px; text-shadow: 1px 1px #000;
-        }
+        #log { position: absolute; top: 10px; left: 10px; z-index: 1000; pointer-events: none; }
     </style>
 </head>
 <body>
-    <div id="debug-log">System Initializing...</div>
+    <div id="log">> Initializing Labeled Scene...</div>
 
-    <a-scene background="color: #050505" renderer="antialias: true; colorManagement: true;">
-        
+    <a-scene background="color: #050505">
         <a-entity id="rig" movement-controls="fly: true; speed: 0.3;">
-            <a-entity id="camera" camera look-controls position="0 1.6 0"></a-entity>
-            
+            <a-entity camera look-controls position="0 1.6 0"></a-entity>
             <a-entity oculus-touch-controls="hand: left"></a-entity>
-            
-            <a-entity oculus-touch-controls="hand: right" laser-controls="hand: right" raycaster="objects: [forcegraph]; far: 100"></a-entity>
+            <a-entity oculus-touch-controls="hand: right" laser-controls="hand: right"></a-entity>
         </a-entity>
 
-        <a-entity id="graph-entity" 
+        <a-entity id="graph" 
             forcegraph="
                 node-auto-color-by: group;
-                node-label: name;
                 link-width: 0.2;
-                link-opacity: 0.4;
-                node-val: 10;
+                link-opacity: 0.2;
+                node-three-object: [node => {
+                    const sprite = new SpriteText(node.name);
+                    sprite.color = 'white';
+                    sprite.textHeight = 10; // Adjust this if labels are too big/small
+                    sprite.backgroundColor = 'rgba(0,0,0,0.5)'; // Dark background for readability
+                    sprite.padding = 2;
+                    sprite.borderRadius = 4;
+                    return sprite;
+                }];
             " 
-            position="0 1.6 -10"
-            scale="0.5 0.5 0.5">
+            position="0 1.6 -15">
         </a-entity>
-
-        <a-sky color="#020202"></a-sky>
-        <a-grid position="0 0 0" cell-size="10" section-size="100" color="#111"></a-grid>
-
     </a-scene>
 
     <script>
-        const logger = document.getElementById('debug-log');
-        function log(msg) { 
-            logger.innerHTML += "<br>> " + msg; 
-            console.log(msg);
-        }
-
-        // 1. Fetch the data
         fetch(`./vr_graph_data.json?t=${Date.now()}`)
-            .then(res => {
-                if (!res.ok) throw new Error("File not found (404)");
-                return res.json();
-            })
+            .then(res => res.json())
             .then(data => {
-                log(`Success: ${data.nodes.length} nodes found.`); 
-                
-                const graphEl = document.getElementById('graph-entity');
-                
-                // 2. Inject data into the VR component
-                graphEl.setAttribute('forcegraph', {
+                document.getElementById('log').innerHTML = `> Loaded ${data.nodes.length} nodes. Labels active.`;
+                document.getElementById('graph').setAttribute('forcegraph', {
                     nodes: data.nodes,
                     links: data.links
                 });
-
-                log("Data Injected. Use Left Thumbstick to fly (Zoom).");
-            })
-            .catch(err => {
-                log("FATAL ERROR: " + err.message);
-                logger.style.color = "red";
             });
-
-        // 3. VR Button Helper
-        const sceneEl = document.querySelector('a-scene');
-        sceneEl.addEventListener('enter-vr', () => {
-            logger.style.display = 'none'; // Hide logs when inside the headset
-        });
-        sceneEl.addEventListener('exit-vr', () => {
-            logger.style.display = 'block';
-        });
     </script>
 </body>
 </html>
-
