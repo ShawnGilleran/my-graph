@@ -25,8 +25,12 @@
 
     <a-scene 
         background="color: #010101" 
-        renderer="antialias: true; colorManagement: true; precision: mediump;"
-        cursor="rayOrigin: mouse">
+        renderer="antialias: false; precision: mediump; sortObjects: false;"
+        webxr="referenceSpaceType: local; requiredFeatures: local-floor;"
+        vr-mode-ui="enabled: true">
+//        background="color: #010101" 
+//        renderer="antialias: true; colorManagement: true; precision: mediump;"
+//        cursor="rayOrigin: mouse">
         
         <a-entity id="rig" movement-controls="fly: true; speed: 1.5;">
             <a-entity camera look-controls position="0 1.6 150">
