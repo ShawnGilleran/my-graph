@@ -1,54 +1,89 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Identity Link VR</title>
+    <title>Identity Link VR - Immersive Edition</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-forcegraph-component/dist/aframe-forcegraph-component.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+    
     <style>
         body { margin: 0; background-color: #000; color: #0f0; font-family: monospace; }
-        #log { position: absolute; top: 10px; left: 10px; z-index: 1000; pointer-events: none; }
+        #debug-log { 
+            position: absolute; top: 10px; left: 10px; z-index: 1000; 
+            pointer-events: none; font-size: 14px; text-shadow: 1px 1px #000;
+        }
     </style>
 </head>
 <body>
-    <div id="log">> Initializing VR Scene...</div>
+    <div id="debug-log">System Initializing...</div>
 
-    <a-scene background="color: #000">
-        <a-entity id="graph" forcegraph="
-            node-auto-color-by: group;
-            node-label: name;
-            link-width: 0.5;
-            link-opacity: 0.2;
-            node-val: val;
-        " position="0 0 -50"></a-entity>
+    <a-scene background="color: #050505" renderer="antialias: true; colorManagement: true;">
+        
+        <a-entity id="rig" movement-controls="fly: true; speed: 0.3;">
+            <a-entity id="camera" camera look-controls position="0 1.6 0"></a-entity>
+            
+            <a-entity oculus-touch-controls="hand: left"></a-entity>
+            
+            <a-entity oculus-touch-controls="hand: right" laser-controls="hand: right" raycaster="objects: [forcegraph]; far: 100"></a-entity>
+        </a-entity>
 
-        <a-entity laser-controls="hand: right"></a-entity>
-        <a-entity laser-controls="hand: left"></a-entity>
-        <a-camera look-controls wasd-controls position="0 1.6 0"></a-camera>
+        <a-entity id="graph-entity" 
+            forcegraph="
+                node-auto-color-by: group;
+                node-label: name;
+                link-width: 0.2;
+                link-opacity: 0.4;
+                node-val: 10;
+            " 
+            position="0 1.6 -10"
+            scale="0.5 0.5 0.5">
+        </a-entity>
+
+        <a-sky color="#020202"></a-sky>
+        <a-grid position="0 0 0" cell-size="10" section-size="100" color="#111"></a-grid>
+
     </a-scene>
 
     <script>
-        const log = (msg) => { document.getElementById('log').innerHTML += "<br>> " + msg; };
+        const logger = document.getElementById('debug-log');
+        function log(msg) { 
+            logger.innerHTML += "<br>> " + msg; 
+            console.log(msg);
+        }
 
-        // We fetch the data and "inject" it into the A-Frame component
+        // 1. Fetch the data
         fetch(`./vr_graph_data.json?t=${Date.now()}`)
             .then(res => {
-                if (!res.ok) throw new Error("Could not find vr_graph_data.json");
+                if (!res.ok) throw new Error("File not found (404)");
                 return res.json();
             })
             .then(data => {
-                log(`Success! Loaded ${data.nodes.length} nodes.`);
-                const graphEl = document.getElementById('graph');
+                log(`Success: ${data.nodes.length} nodes found.`);
                 
-                // Inject the data into the A-Frame component
+                const graphEl = document.getElementById('graph-entity');
+                
+                // 2. Inject data into the VR component
                 graphEl.setAttribute('forcegraph', {
                     nodes: data.nodes,
                     links: data.links
                 });
+
+                log("Data Injected. Use Left Thumbstick to fly (Zoom).");
             })
             .catch(err => {
-                log("FETCH ERROR: " + err.message);
-                console.error(err);
+                log("FATAL ERROR: " + err.message);
+                logger.style.color = "red";
             });
+
+        // 3. VR Button Helper
+        const sceneEl = document.querySelector('a-scene');
+        sceneEl.addEventListener('enter-vr', () => {
+            logger.style.display = 'none'; // Hide logs when inside the headset
+        });
+        sceneEl.addEventListener('exit-vr', () => {
+            logger.style.display = 'block';
+        });
     </script>
 </body>
 </html>
+
