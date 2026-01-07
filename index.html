@@ -100,7 +100,18 @@
 
                 // VR Optimization: Only build the heavy 3D objects when user is ready
                 document.querySelector('a-scene').addEventListener('enter-vr', () => {
-                    setTimeout(startCloud, 1000);
+                    console.log("VR Session Started");
+                    header.innerHTML = "VR MODE ACTIVE - GENERATING...";
+                    
+                    // 1. Hide the 2D Header so it doesn't 'ghost' into the headset
+                    header.style.display = 'none';
+                
+                    // 2. Wait 3 seconds to let the headset settle
+                    setTimeout(() => {
+                        startCloud();
+                        // 3. Force the camera to look at the center
+                        document.getElementById('rig').setAttribute('position', '0 0 150');
+                    }, 3000);
                 });
 
                 // For testing on Mac Browser
