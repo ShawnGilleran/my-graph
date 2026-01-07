@@ -2,31 +2,42 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Identity VR - Pro Pilot v2</title>
+    <title>Identity VR - Pro v3</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-forcegraph-component/dist/aframe-forcegraph-component.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
 </head>
 <body style="margin: 0; background: #000;">
-    <div id="header" style="position:fixed; top:0; width:100%; background:rgba(0,30,0,0.9); color:#0f0; text-align:center; padding:10px; z-index:99; font-family:monospace;">INITIALIZING...</div>
+    <div id="header" style="position:fixed; top:0; width:100%; background:rgba(0,30,0,0.9); color:#0f0; text-align:center; padding:15px; z-index:99; font-family:monospace; font-size:20px; border-bottom:1px solid #0f0;">
+        SCANNING IDENTITY CLOUD...
+    </div>
 
-    <a-scene background="color: #010101" renderer="antialias: false; precision: mediump;">
+    <a-scene background="color: #010101" renderer="antialias: false; precision: mediump;" webxr="referenceSpaceType: local;">
         
-        <a-entity id="rig" movement-controls="fly: true; speed: 1.0;" position="0 0 100">
+        <a-entity id="rig" movement-controls="fly: true; speed: 1.2;" position="0 0 100">
             <a-entity camera look-controls position="0 1.6 0">
-                <a-entity cursor="rayOrigin: mouse;" raycaster="objects: [forcegraph-node];"></a-entity>
+                <a-entity cursor="rayOrigin: mouse;" raycaster="objects: [forcegraph-node]; far: 1000;"></a-entity>
             </a-entity>
             
             <a-entity oculus-touch-controls="hand: left"></a-entity>
+            
             <a-entity id="right-hand" oculus-touch-controls="hand: right" laser-controls="hand: right" raycaster="objects: [forcegraph-node]; far: 500;">
-                <a-entity id="tablet" position="0 0.1 0.1" rotation="-60 0 0">
-                    <a-plane width="0.5" height="0.2" color="#111"></a-plane>
-                    <a-text id="vr-label" value="READY" color="#0f0" align="center" width="1.5" position="0 0 0.01"></a-text>
+                <a-entity position="0 0.1 0.1" rotation="-60 0 0">
+                    <a-plane width="0.6" height="0.25" color="#001100" opacity="0.9"></a-plane>
+                    <a-text id="vr-label" value="DECODER READY" color="#00ff88" align="center" width="1.5" position="0 0 0.02"></a-text>
                 </a-entity>
             </a-entity>
         </a-entity>
 
-        <a-entity id="graph" forcegraph="node-id: id; node-rel-size: 5; warmup-ticks: 150; cooldown-ticks: 0;"></a-entity>
+        <a-entity id="graph" 
+            forcegraph="
+                node-id: id; 
+                node-rel-size: 6; 
+                link-directional-particles: 3;
+                warmup-ticks: 150; 
+                cooldown-ticks: 0;
+            ">
+        </a-entity>
     </a-scene>
 
     <script>
@@ -37,17 +48,20 @@
         fetch(`./vr_graph_data.json?t=${Date.now()}`)
             .then(res => res.json())
             .then(data => {
-                header.innerHTML = "DATA LOADED - SCAN NODES";
+                header.innerHTML = "DATA SYNCED. POINT TO REVEAL.";
 
                 graphEl.setAttribute('forcegraph', {
                     nodes: data.nodes,
-                    links: data.links,
-                    onNodeHover: (node) => {
-                        if (node) {
-                            const info = node.name || node.id;
-                            header.innerHTML = `ID: ${info}`;
-                            vrLabel.setAttribute('value', info);
-                        }
+                    links: data.links
+                });
+
+                // This event listener is the most robust for VR Raycasters
+                graphEl.addEventListener('node-hover', (evt) => {
+                    const node = evt.detail;
+                    if (node) {
+                        const identity = node.name || "Unknown";
+                        header.innerHTML = `MATCH: ${identity}`;
+                        vrLabel.setAttribute('value', identity);
                     }
                 });
             });
