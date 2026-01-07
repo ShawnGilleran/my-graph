@@ -49,7 +49,7 @@
         fetch(`./vr_graph_data.json?t=${Date.now()}`)
             .then(res => res.json())
             .then(data => {
-                document.getElementById('log').innerHTML = `> Found ${data.nodes.length} nodes. Ready for VR.`;
+                document.getElementById('log').innerHTML = `> Found ${data.nodes.length} nodes. Ready for VR1.`;
                 const graphEl = document.getElementById('graph');
                 graphEl.setAttribute('forcegraph', {
                     nodes: data.nodes,
