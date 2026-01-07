@@ -2,113 +2,85 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Identity Link VR | Production</title>
+    <title>Identity VR - Pro Build</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-forcegraph-component/dist/aframe-forcegraph-component.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
-    
     <style>
-        body { margin: 0; background-color: #000; overflow: hidden; }
+        body { margin: 0; background: #000; }
         #data-header { 
-            position: fixed; 
-            top: 0; left: 0; width: 100%; 
+            position: fixed; top: 0; left: 0; width: 100%; 
             background: rgba(0, 30, 0, 0.9); color: #00ff88; 
-            padding: 15px; font-family: 'Courier New', monospace; font-size: 18px;
-            border-bottom: 2px solid #00ff88; z-index: 9999;
-            text-align: center; pointer-events: none;
+            padding: 15px; font-family: monospace; font-size: 18px;
+            border-bottom: 2px solid #00ff88; z-index: 9999; text-align: center;
         }
     </style>
 </head>
 <body>
+    <div id="data-header">READY FOR CLOUD...</div>
 
-    <div id="data-header">INITIALIZING IDENTITY CLOUD...</div>
-
-    <a-scene 
-        background="color: #010101" 
-        renderer="antialias: false; precision: mediump;"
-        webxr="referenceSpaceType: local;">
-    
-    <a-entity id="rig" 
-              movement-controls="fly: true; speed: 0.8;" 
-              position="0 0 50">
-        <a-entity camera look-controls position="0 1.6 0"></a-entity>
-        <a-entity oculus-touch-controls="hand: left"></a-entity>
-        <a-entity oculus-touch-controls="hand: right" 
-                  laser-controls="hand: right"
-                  raycaster="objects: [forcegraph-node]; far: 500; interval: 100;">
+    <a-scene background="color: #010101" renderer="antialias: false; precision: mediump;" webxr="referenceSpaceType: local;">
+        
+        <a-entity id="rig" movement-controls="fly: true; speed: 1.2;" position="0 0 100">
+            <a-entity camera look-controls position="0 1.6 0">
+                <a-entity cursor="rayOrigin: mouse;" raycaster="objects: [forcegraph-node];"></a-entity>
+            </a-entity>
+            
+            <a-entity oculus-touch-controls="hand: left"></a-entity>
+            <a-entity oculus-touch-controls="hand: right" laser-controls="hand: right" raycaster="objects: [forcegraph-node]; far: 500;">
+                <a-text id="vr-label" value="Point at a node..." position="0 0.1 0" rotation="-90 0 0" width="1" color="#00ff88" align="center"></a-text>
+            </a-entity>
         </a-entity>
-</a-entity>
-    
+
+        <a-entity light="type: ambient; intensity: 1.5"></a-entity>
+
         <a-entity id="graph" 
             forcegraph="
-                node-id: id;
-                node-rel-size: 6; 
-                link-width: 1;
-                d3-force-link-distance: 20;
-                d3-force-charge: -50;
-                warmup-ticks: 250;
+                node-id: id; 
+                link-source: source; 
+                link-target: target; 
+                node-rel-size: 5;
+                link-directional-particles: 3;
+                warmup-ticks: 150; 
+                cooldown-ticks: 0;
             ">
         </a-entity>
     </a-scene>
 
     <script>
         const header = document.getElementById('data-header');
+        const vrLabel = document.getElementById('vr-label');
         const graphEl = document.getElementById('graph');
 
-        // Fetch the data from your Python-generated JSON
-        // Change this line in your script:
-        fetch(window.location.origin + window.location.pathname + 'vr_graph_data.json')
-            .then(res => {
-                if (!res.ok) throw new Error("JSON file not found.");
-                return res.json();
-            })
+        fetch(`./vr_graph_data.json?t=${Date.now()}`)
+            .then(res => res.json())
             .then(data => {
-                header.innerHTML = `DATABASE LOADED: ${data.nodes.length} NODES | ENTER VR`;
+                header.innerHTML = "DATABASE LOADED. GENERATING...";
 
-                const startCloud = () => {
-                    header.innerHTML = "GENERATING CLOUD... STAND BY";
-                    
-                    // Inject data and setup the hover callback
+                // Start immediately for Browser, or wait for VR
+                const initGraph = () => {
                     graphEl.setAttribute('forcegraph', {
                         nodes: data.nodes,
                         links: data.links,
-                        // THE VR CALLBACK
                         onNodeHover: (node) => {
                             if (node) {
-                                // This will show up in your green header in the headset
-                                header.innerHTML = `DECODED: ${node.name}`;
-                                header.style.backgroundColor = "rgba(0, 80, 0, 0.9)";
+                                const txt = `IDENTIFIED: ${node.name}`;
+                                header.innerHTML = txt; // For Mac
+                                vrLabel.setAttribute('value', node.name); // For VR Wrist
                             }
                         }
                     });
+                    header.innerHTML = "CLOUD DEPLOYED. FLY TO DATA.";
                 };
 
-                // VR Optimization: Only build the heavy 3D objects when user is ready
-                document.querySelector('a-scene').addEventListener('enter-vr', () => {
-                    console.log("VR Session Started");
-                    header.innerHTML = "VR MODE ACTIVE - GENERATING...";
-                    
-                    // 1. Hide the 2D Header so it doesn't 'ghost' into the headset
-                    header.style.display = 'none';
-                
-                    // 2. Wait 3 seconds to let the headset settle
-                    setTimeout(() => {
-                        startCloud();
-                        // 3. Force the camera to look at the center
-                        document.getElementById('rig').setAttribute('position', '0 0 100');
-                    }, 3000);
-                });
+                // Run for Mac
+                initGraph();
 
-                // For testing on Mac Browser
-                if (!AFRAME.utils.device.checkHeadsetConnected()) {
-                    startCloud();
-                }
-            })
-            .catch(err => {
-                header.innerHTML = "CRITICAL ERROR: " + err.message;
-                header.style.background = "maroon";
+                // Vertical Flight Logic for VR Thumbstick
+                document.querySelector('a-scene').addEventListener('enter-vr', () => {
+                    header.innerHTML = "VR MODE ACTIVE";
+                });
             });
     </script>
 </body>
 </html>
-
