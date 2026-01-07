@@ -71,7 +71,8 @@
         const graphEl = document.getElementById('graph');
 
         // Fetch the data from your Python-generated JSON
-        fetch(`./vr_graph_data.json?t=${Date.now()}`)
+        // Change this line in your script:
+        fetch(window.location.origin + window.location.pathname + 'vr_graph_data.json')
             .then(res => {
                 if (!res.ok) throw new Error("JSON file not found.");
                 return res.json();
