@@ -1,52 +1,77 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Identity Link VR</title>
+    <title>Identity Link VR - Final Fix</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
-    <script src="https://unpkg.com/three-spritetext"></script>
     <script src="https://unpkg.com/aframe-forcegraph-component/dist/aframe-forcegraph-component.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     <style>
-        body { margin: 0; background-color: #000; color: #0f0; font-family: monospace; }
-        #log { position: absolute; top: 10px; left: 10px; z-index: 1000; pointer-events: none; }
+        /* Force the overlay to the very top of everything */
+        #data-header { 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; 
+            background: #002200; color: #00ff88; 
+            padding: 20px; font-family: monospace; font-size: 20px;
+            border-bottom: 3px solid #00ff88; z-index: 9999 !important;
+            text-align: center; box-sizing: border-box;
+        }
+        body { margin: 0; background: #000; }
     </style>
 </head>
 <body>
-    <div id="log">> Initializing Identity Graph...</div>
+    <div id="data-header">SYSTEM READY: HOVER OVER A NODE TO DECODE</div>
 
-    <a-scene background="color: #050505">
-        <a-entity id="rig" movement-controls="fly: true; speed: 0.3;">
-            <a-entity camera look-controls position="0 1.6 0"></a-entity>
-            <a-entity oculus-touch-controls="hand: left"></a-entity>
-            <a-entity oculus-touch-controls="hand: right" laser-controls="hand: right">
+    <a-scene background="color: #010101" cursor="rayOrigin: mouse">
+        <a-entity id="rig" movement-controls="fly: true; speed: 1.5;">
+            <a-entity camera look-controls position="0 20 200"></a-entity>
         </a-entity>
+
         <a-entity id="graph" 
-          forcegraph="
-            nodes: [];
-            links: [];
-            node-auto-color-by: group;
-            link-width: 0.2;
-            link-opacity: 0.5;
-            /* node-three-object: [node => { ... }];  <-- COMMENT THIS OUT TEMPORARILY */
-          "
-          position="0 1.6 -5"> </a-entity>
+            forcegraph="
+                node-id: id;
+                link-source: source;
+                link-target: target;
+                node-auto-color-by: group;
+                node-rel-size: 4;
+                link-width: 0.8;
+                link-opacity: 0.4;
+                link-directional-particles: 3;
+                warmup-ticks: 150;
+                cooldown-ticks: 0;
+            ">
+        </a-entity>
     </a-scene>
 
     <script>
-        // Fetch your JSON data from the same folder
+        const header = document.getElementById('data-header');
+
         fetch(`./vr_graph_data.json?t=${Date.now()}`)
             .then(res => res.json())
             .then(data => {
-                document.getElementById('log').innerHTML = `> Found ${data.nodes.length} nodes. Ready for VR1.`;
                 const graphEl = document.getElementById('graph');
+                
+                // Set data and the internal 'onNodeHover' callback
                 graphEl.setAttribute('forcegraph', {
                     nodes: data.nodes,
-                    links: data.links
+                    links: data.links,
+                    // This is the specific property for hover data
+                    onNodeHover: (node) => {
+                        if (node) {
+                            console.log("IDENTIFIED:", node.name); // Check your Mac console!
+                            header.innerHTML = `MATCH FOUND: <span style="color:white">${node.name}</span> | ID: ${node.id}`;
+                            header.style.background = "#004400";
+                        } else {
+                            header.innerHTML = `SCANNING ${data.nodes.length} NODES...`;
+                            header.style.background = "#002200";
+                        }
+                    }
                 });
             })
             .catch(err => {
-                document.getElementById('log').innerHTML = "ERROR: " + err.message;
+                header.innerHTML = "FETCH ERROR: Check your JSON file";
+                console.error(err);
             });
     </script>
 </body>
 </html>
+
